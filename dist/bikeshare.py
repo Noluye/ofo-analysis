@@ -16,22 +16,19 @@ def get_filters():
         (str) day - name of the day of week to filter by, or "all" to apply no day filter
     """
     print('Hello! Let\'s explore some US bikeshare data!')
+
     # get user input for city (chicago, new york city, washington).
-    while True:
-        city = input('Would you like to see data for Chicago, New York, or Washington?\n').lower()
-        if city in ['chicago', 'new york', 'washington']:
-            break
-        else:
-            print('Your answer is not correct, please try again.\n')
-    print('Looks like you want to hear about %s! If this is not true, restart the program now!\n\n' % city)
+    city = get_item('Would you like to see data for Chicago, New York, or Washington?\n',
+             'Your answer is not correct, please try again.\n',
+             CITY_DATA.keys(),
+             lambda x: str.lower(x))
+    print('Looks like you want to hear about %s! If this is not true, restart the program now!\n\n' % city.title())
     
     # get user input for preferences of time filter
-    while True:
-        user_filter = input('Would you like to filter the data by month, day, both, or not at all? Type "none" for no time filter.\n').lower()
-        if user_filter in ['month', 'day', 'both', 'none']:
-            break
-        else:
-            print('Your answer is not correct, please try again.\n') 
+    user_filter = get_item('Would you like to filter the data by month, day, both, or not at all? Type "none" for no time filter.\n',
+             'Your answer is not correct, please try again.\n',
+             ['month', 'day', 'both', 'none'],
+             lambda x: str.lower(x)) 
     print('We will make sure to filter by %s!\n\n' % user_filter)
 
     # month can be assigned
@@ -39,30 +36,41 @@ def get_filters():
     if user_filter == 'month' or user_filter == 'both':
         # get user input for month (all, january, february, ... , june)
         months = {'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6}
-        while True:
-            month_key = input('Which month? January, February, March, April, May, or June?\n').lower()
-            if month_key in months:
-                month = months[month_key]
-                break
-            else:
-                print('Your answer is not correct, please try again.\n') 
+        month_key = get_item('Which month? January, February, March, April, May, or June?\n',
+             'Your answer is not correct, please try again.\n',
+             months.keys(),
+             lambda x: str.lower(x))
+        month = months[month_key]
         print('You will make sure to choose %s!\n\n' % month_key)
     # day can be assigned
     day = 'all'
     if user_filter == 'day' or user_filter == 'both':
         # get user input for day of week (all, monday, tuesday, ... sunday)
         days = {'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3, 'thursday': 4, 'friday': 5, 'saturday': 6}
-        while True:
-            day_key = input('Which day? Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday?\n').lower()
-            if day_key in days:
-                day = days[day_key]
-                break
-            else:
-                print('Your answer is not correct, please try again.\n') 
+        day_key = get_item('Which day? Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday?\n',
+             'Your answer is not correct, please try again.\n',
+             days.keys(),
+             lambda x: str.lower(x))
+        day = days[day_key]     
         print('You will make sure to choose %s!\n\n' % day_key)
+
     print('-'*40)
     return city, month, day
 
+def get_item(input_print, error_print, enterable_list, get_value):
+    """
+    Get input in the same pattern.
+
+    Returns:
+        (str) ret - the input of the user in certain pattern
+    """
+    while True:
+        ret = input(input_print)
+        ret = get_value(ret) # 这里执行作为参数的函数
+        if ret in enterable_list:
+            return ret
+        else:
+            print(error_print)
 
 def load_data(city, month, day):
     """
@@ -90,9 +98,6 @@ def load_data(city, month, day):
     df['day'] = df['Start Time'].dt.weekday
     # extract hour from the Start Time column to create an hour column
     df['hour'] = df['Start Time'].dt.hour
-    # extract duration from the Start Time column and the End Time column to create an duration column
-    df['End Time'] = pd.to_datetime(df['End Time'])
-    df['duration'] = df['End Time'].dt.date - df['Start Time'].dt.date
     
     # filter some rows based on user's filter
     if month == 'all' and day == 'all':
@@ -156,14 +161,11 @@ def trip_duration_stats(df):
     start_time = time.time()
 
     # display total travel time
-    total = 0
-    for index, row in df.iterrows():
-        total += row['duration'].total_seconds()
+    total = df['Trip Duration'].sum()
     print('\nTotal travel time: %f seconds\n' % total)
 
     # display mean travel time
-    print('Count: %d\n' % len(list(df.index.values)))
-    mean_val = total / len(list(df.index.values))
+    mean_val = df['Trip Duration'].mean()
     print('Mean travel time: %f seconds\n' % mean_val)
    
     print("\nThis took %f seconds." % (time.time() - start_time))
